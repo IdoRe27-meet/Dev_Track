@@ -1,105 +1,105 @@
-
 import flet as ft
+import asyncio
 import random
+import string
 
-
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "A greeting flet app by Ido"
-    page.padding = 0
-    page.spacing = 0
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    
+    first_name = ft.TextField(label="First Name")
+    last_name = ft.TextField(label="Last Name")
+    greeting = ft.Text(size=20, weight=ft.FontWeight.BOLD)
 
-    first_name = ft.TextField(
-        label="First Name",
-        width=300
-    )
+    async def rain_worker(e=None):
+        logo_url = "https://cdn.prod.website-files.com/5dd64bd3a930f9d04abd1363/5de254f85f1762feee30d664_meet_logo_red.png"
+        
+        try:
+            w = int(page.window.width) if page.window.width else int(page.window_width)
+            h = int(page.window.height) if page.window.height else int(page.window_height)
+        except:
+            w, h = 2500, 1500
 
-    last_name = ft.TextField(
-        label="Last Name",
-        width=300
-    )
-
-    greeting = ft.Text(size=20)
-
-    logos = []
-
-    def create_logo():
-        return ft.Container(
-            content=ft.Image(
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2GhGRqfDTApmn_JO7HLeI0gKi7pQSqf4m_Q-1PXf3gRUfSZBHjqoTJT2q&s=10",
-                width=35,
-                height=35
-            ),
-            width=35,
-            height=35,
-            left=random.randint(10, 800),
-            top=-60
-        )
-
-    for _ in range(50):
-        logos.append(create_logo())
-
-    logo_stack = ft.Stack(
-        controls=logos,
-        expand=True
-    )
-
-    def drop_logos(e):
-        for logo in logos:
-            logo.animate_position = None
-            logo.left = random.randint(10, 800)
-            logo.top = random.randint(-150, -30)
-
-        page.update()
-
-        for logo in logos:
-            logo.animate_position = ft.Animation(
-                duration=random.randint(800, 1400),
-                curve=ft.AnimationCurve.EASE_IN
+        falling_logos = []
+        for _ in range(60):
+            logo = ft.Container(
+                content=ft.Image(src=logo_url, width=60),
+                left=random.randint(0, max(w, 500)),
+                top=-100,
+                animate_position=ft.Animation(random.randint(2000, 3500), ft.AnimationCurve.EASE_IN)
             )
-            logo.top = random.randint(850, 1000)
+            falling_logos.append(logo)
 
+        page.overlay.extend(falling_logos)
+        page.update()
+        await asyncio.sleep(0.05)
+
+        for logo in falling_logos:
+            logo.top = h + 200
         page.update()
 
-    def greet(e):
-        greeting.value = (
-            f"Welcome, {first_name.value} {last_name.value}"
-        )
+        await asyncio.sleep(4.0)
+        for logo in falling_logos:
+            if logo in page.overlay:
+                page.overlay.remove(logo)
         page.update()
 
-    greeting_button = ft.GestureDetector(
-        content=ft.Button(
-            "Press for a greeting!",
-            on_click=greet
-        ),
-        on_long_press=drop_logos
+    async def greet(e):
+        val1_raw = first_name.value or ""
+        val2_raw = last_name.value or ""
+        val1 = val1_raw.lower().strip()
+        val2 = val2_raw.lower().strip()
+
+        if val1_raw.strip().isnumeric() and val2_raw.strip().isnumeric():
+            total = int(val1_raw.strip()) + int(val2_raw.strip())
+            greeting.value = f"Calculator Mode: {val1_raw.strip()} + {val2_raw.strip()} = {total}"
+        
+        elif val1 == "change" and val2 == "color":
+            greeting.value = "The color has changed!"
+            colors = [ft.Colors.RED, ft.Colors.BLUE, ft.Colors.GREEN, ft.Colors.YELLOW, ft.Colors.PURPLE, ft.Colors.CYAN]
+            page.bgcolor = random.choice(colors)
+        
+        elif val1 == "gen" and val2 == "pass":
+            chars = string.ascii_letters + string.digits + "!@#$%^&*"
+            password = ''.join(random.choice(chars) for _ in range(12))
+            greeting.value = f"New Password: {password}"
+        
+        elif val1 == "boom":
+            for i in range(5, 0, -1):
+                greeting.value = f"Closing app in {i}..."
+                greeting.color = ft.Colors.RED
+                page.update()
+                await asyncio.sleep(1)
+            await page.window.destroy()
+            return
+        
+        elif val1 == "reverse":
+            reversed_text = val2_raw[::-1]
+            greeting.value = f"Welcome, {reversed_text}!"
+        
+        elif val1 == "rename" and val2_raw:
+            btn.content.value = val2_raw
+            greeting.value = "Button renamed!"
+        
+        elif val1 == "31" and val2 =="05":
+            page.bgcolor = ft.Colors.BLUE_900
+            greeting.value = "Happy BD!"
+
+
+        else:
+            page.bgcolor = None
+            greeting.color = None
+            greeting.value = f"Welcome, {val1_raw} {val2_raw}!".strip()
+        
+        page.update()
+
+    btn = ft.Button(
+        content=ft.Text("Press for a greeting!"), 
+        on_click=greet, 
+        on_long_press=rain_worker
     )
 
-    content_column = ft.Column(
-        controls=[
-            first_name,
-            last_name,
-            greeting_button,
-            greeting
-        ],
-        alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        tight=True
-    )
-
-    root_stack = ft.Stack(
-        expand=True,
-        controls=[
-            logo_stack,
-            ft.Row(
-                controls=[content_column],
-                alignment=ft.MainAxisAlignment.CENTER,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                expand=True
-            )
-        ]
-    )
-
-    page.add(root_stack)
-
+    page.add(first_name, last_name, btn, greeting)
 
 ft.run(main)
