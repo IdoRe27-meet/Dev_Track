@@ -1,6 +1,6 @@
 # My greetings app!
 
-I created a simple greeting flet app. On the surface, it takes a first and last name and displays a greeting message, but if you type the right words - you can do a lor more.
+I created a simple greetings flet app. On the surface, it takes a first and last name and displays a greeting message, but if you type the right words - you can do a lot more.
 
 ## Easter eggs!
 
